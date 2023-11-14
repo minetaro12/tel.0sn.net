@@ -68,13 +68,20 @@ Web: https://0sn.net
 `
 
 	// CTRL+Cで終了
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for {
-			buffer := make([]byte, 5)
-			conn.Read(buffer)
-			if hex.EncodeToString(buffer) == "fff4fffd06" {
-				conn.CloseWrite()
-				break
+			select {
+			// キャンセル通知が来たら終了
+			case <-ctx.Done():
+				return
+			default:
+				buffer := make([]byte, 5)
+				conn.Read(buffer)
+				if hex.EncodeToString(buffer) == "fff4fffd06" {
+					conn.CloseWrite()
+					break
+				}
 			}
 		}
 	}()
@@ -82,14 +89,14 @@ Web: https://0sn.net
 	for _, v := range fmt.Sprintf(text, *count) {
 		_, err := io.WriteString(conn, string(v))
 		if err != nil {
-			// 途中で切断された場合
-			log.Println("Disconnected:", conn.RemoteAddr().String())
-			return
+			//途中で切断されたら終了
+			break
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 
 	conn.CloseWrite()
+	cancel()
 	log.Println("Disconnected:", conn.RemoteAddr().String())
 }
 
