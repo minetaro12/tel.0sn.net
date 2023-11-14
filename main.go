@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -65,6 +66,16 @@ _       _   ___                         _
 Web: https://0sn.net
 --------------------------
 `
+
+	// CTRL+Cで終了
+	go func() {
+		buffer := make([]byte, 5)
+		conn.Read(buffer)
+		if hex.EncodeToString(buffer) == "fff4fffd06" {
+			conn.CloseWrite()
+		}
+	}()
+
 	for _, v := range fmt.Sprintf(text, *count) {
 		io.WriteString(conn, string(v))
 		time.Sleep(50 * time.Millisecond)
