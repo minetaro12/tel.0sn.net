@@ -69,19 +69,28 @@ Web: https://0sn.net
 
 	// CTRL+Cで終了
 	go func() {
-		buffer := make([]byte, 5)
-		conn.Read(buffer)
-		if hex.EncodeToString(buffer) == "fff4fffd06" {
-			conn.CloseWrite()
+		for {
+			buffer := make([]byte, 5)
+			conn.Read(buffer)
+			if hex.EncodeToString(buffer) == "fff4fffd06" {
+				conn.CloseWrite()
+				break
+			}
 		}
 	}()
 
 	for _, v := range fmt.Sprintf(text, *count) {
-		io.WriteString(conn, string(v))
+		_, err := io.WriteString(conn, string(v))
+		if err != nil {
+			// 途中で切断された場合
+			log.Println("Disconnected:", conn.RemoteAddr().String())
+			return
+		}
 		time.Sleep(50 * time.Millisecond)
 	}
 
 	conn.CloseWrite()
+	log.Println("Disconnected:", conn.RemoteAddr().String())
 }
 
 func loadCounter() int {
