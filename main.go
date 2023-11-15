@@ -27,7 +27,7 @@ func main() {
 	}
 
 	count := loadCounter()
-	log.Println("Listening:", listener.Addr().String())
+	log.Println("Telnet Server Listening on", listen, "...")
 	go acceptTCP(listener, &count)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
@@ -53,6 +53,7 @@ func echoHandler(conn *net.TCPConn, count *int) {
 	log.Println("Connected:", conn.RemoteAddr().String())
 	*count++
 	text := `
+Press Ctrl+C to exit
 --------------------------
 tel.0sn.netへようこそ！
 _       _   ___                         _   
@@ -80,7 +81,7 @@ Web: https://0sn.net
 				conn.Read(buffer)
 				if hex.EncodeToString(buffer) == "fff4fffd06" {
 					conn.CloseWrite()
-					break
+					return
 				}
 			}
 		}
